@@ -4,15 +4,17 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
+  const isMobile = window.innerWidth <= 768;
+
   /* ========== NAVBAR ========== */
-  const navbar    = document.getElementById('navbar');
-  const hamburger = document.getElementById('hamburger');
+  const navbar     = document.getElementById('navbar');
+  const hamburger  = document.getElementById('hamburger');
   const mobileMenu = document.getElementById('mobileMenu');
   const mobileLinks = document.querySelectorAll('.mobile-link');
 
   window.addEventListener('scroll', () => {
     navbar.classList.toggle('scrolled', window.scrollY > 60);
-  });
+  }, { passive: true });
 
   hamburger.addEventListener('click', () => {
     hamburger.classList.toggle('open');
@@ -60,54 +62,57 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ============================================================
      TERMINAL TAKEOVER — PROJECTS
      ============================================================ */
-  const takeover      = document.getElementById('takeover');
-  const flash         = document.getElementById('flash');
-  const bootScreen    = document.getElementById('bootScreen');
-  const bootLinesEl   = document.getElementById('bootLines');
-  const progressFill  = document.getElementById('progressFill');
-  const projScreen    = document.getElementById('projScreen');
-  const tkClose       = document.getElementById('tkClose');
-  const launchBtn     = document.getElementById('launchProjectsBtn');
+  const takeover     = document.getElementById('takeover');
+  const flash        = document.getElementById('flash');
+  const bootScreen   = document.getElementById('bootScreen');
+  const bootLinesEl  = document.getElementById('bootLines');
+  const progressFill = document.getElementById('progressFill');
+  const projScreen   = document.getElementById('projScreen');
+  const tkClose      = document.getElementById('tkClose');
+  const launchBtn    = document.getElementById('launchProjectsBtn');
 
-  // Staggered boot lines — total spread: 0 → ~2600ms, reveal at 3000ms
-  const bootLines = [
-    { text: '$ initializing project_loader.sh',         delay: 0    },
-    { text: '$ checking system permissions...',          delay: 350  },
-    { text: '[OK] access granted',                       delay: 700  },
-    { text: '$ scanning repositories...',                delay: 1000 },
-    { text: '[OK] found 3 deployed projects',            delay: 1300 },
-    { text: '$ mounting e-rawaana-system ............',  delay: 1600 },
-    { text: '[OK] e-rawaana-system loaded',              delay: 1850 },
-    { text: '$ mounting hotel-management ..........',    delay: 2050 },
-    { text: '[OK] hotel-management loaded',              delay: 2250 },
-    { text: '$ mounting portfolio ...............',       delay: 2400 },
-    { text: '[OK] portfolio loaded',                     delay: 2600 },
-    { text: '$ rendering interface...',                  delay: 2800 },
+  // On mobile use fewer lines and faster timing to prevent freeze
+  const bootLinesFull = [
+    { text: '$ initializing project_loader.sh',        delay: 0    },
+    { text: '$ checking system permissions...',         delay: 350  },
+    { text: '[OK] access granted',                      delay: 700  },
+    { text: '$ scanning repositories...',               delay: 1000 },
+    { text: '[OK] found 3 deployed projects',           delay: 1300 },
+    { text: '$ mounting e-rawaana-system ............', delay: 1600 },
+    { text: '[OK] e-rawaana-system loaded',             delay: 1850 },
+    { text: '$ mounting job-tracker ..........',        delay: 2050 },
+    { text: '[OK] job-tracker loaded',                  delay: 2250 },
+    { text: '$ mounting hotel-management .......',      delay: 2400 },
+    { text: '[OK] hotel-management loaded',             delay: 2600 },
+    { text: '$ rendering interface...',                 delay: 2800 },
   ];
 
-  // Total boot duration before projects reveal
-  const BOOT_DURATION = 3000;
+  const bootLinesMobile = [
+    { text: '$ initializing project_loader.sh',  delay: 0   },
+    { text: '[OK] found 3 deployed projects',    delay: 500 },
+    { text: '[OK] e-rawaana-system loaded',      delay: 900 },
+    { text: '[OK] job-tracker loaded',           delay: 1200 },
+    { text: '[OK] hotel-management loaded',      delay: 1500 },
+    { text: '$ rendering interface...',          delay: 1800 },
+  ];
+
+  const bootLines   = isMobile ? bootLinesMobile : bootLinesFull;
+  const BOOT_DURATION = isMobile ? 2200 : 3000;
 
   let bootTimers = [];
-  let progInterval;
   let typingStarted = false;
 
   function openTakeover() {
-    // Remember scroll position to restore on close
     takeover._savedScroll = window.scrollY;
-
-    // Lock body scroll
     document.body.style.overflow = 'hidden';
-
-    // Show overlay
     takeover.classList.add('active');
 
-    // Orange flash frame
+    // Flash on open
     flash.classList.remove('hit');
     void flash.offsetWidth;
     flash.classList.add('hit');
 
-    // Reset state
+    // Reset
     bootLinesEl.innerHTML = '';
     progressFill.style.transition = 'none';
     progressFill.style.width = '0%';
@@ -116,94 +121,85 @@ document.addEventListener('DOMContentLoaded', () => {
     bootScreen.style.display = 'flex';
     document.querySelectorAll('.p-card').forEach(c => c.classList.remove('in'));
 
-    // Print lines with stagger
+    // Print boot lines
     bootLines.forEach(({ text, delay }) => {
       const t = setTimeout(() => {
         const div = document.createElement('div');
         div.className = 'boot-line';
-
         if (text.startsWith('[OK]')) {
-          div.innerHTML = `<span class="ok">[OK]</span> ${text.slice(4)}`;
+          div.innerHTML = `<span class="ok">[OK]</span>${text.slice(4)}`;
         } else {
           div.innerHTML = `<span class="dim">${text}</span>`;
         }
-
         bootLinesEl.appendChild(div);
-        // Smooth scroll boot terminal to bottom
         bootLinesEl.scrollTop = bootLinesEl.scrollHeight;
-
-        // Trigger CSS fade-in
         requestAnimationFrame(() => div.classList.add('show'));
       }, delay);
       bootTimers.push(t);
     });
 
-    // Progress bar — smooth linear fill over BOOT_DURATION
+    // Progress bar smooth fill
     requestAnimationFrame(() => {
-      progressFill.style.transition = `width ${BOOT_DURATION}ms linear`;
-      progressFill.style.width = '100%';
+      setTimeout(() => {
+        progressFill.style.transition = `width ${BOOT_DURATION}ms linear`;
+        progressFill.style.width = '100%';
+      }, 30);
     });
 
     // Reveal projects after boot
     const revealTimer = setTimeout(() => {
-      // Fade out boot screen
-      bootScreen.style.transition = 'opacity 0.4s ease';
+      bootScreen.style.transition = 'opacity 0.35s ease';
       bootScreen.style.opacity = '0';
 
       setTimeout(() => {
         bootScreen.style.display = 'none';
+        bootScreen.style.transition = '';
         projScreen.classList.add('show');
 
-        // Stagger card entry
+        // Stagger cards — longer delay on mobile to avoid paint lag
+        const cardDelay = isMobile ? 200 : 140;
         document.querySelectorAll('.p-card').forEach((card, i) => {
-          setTimeout(() => card.classList.add('in'), i * 140);
+          setTimeout(() => card.classList.add('in'), i * cardDelay);
         });
 
-        // Start terminal typing
         if (!typingStarted) {
           typingStarted = true;
-          setTimeout(type, 400);
+          setTimeout(type, 600);
         }
-      }, 400);
+      }, 350);
     }, BOOT_DURATION);
 
     bootTimers.push(revealTimer);
   }
 
   function closeTakeover() {
-    // Fade out takeover smoothly — no jump, no scroll change
-    takeover.style.transition = 'opacity 0.45s ease';
-    takeover.style.opacity    = '0';
+    takeover.style.transition = 'opacity 0.4s ease';
+    takeover.style.opacity = '0';
 
     setTimeout(() => {
       takeover.classList.remove('active');
-      takeover.style.opacity    = '';
+      takeover.style.opacity = '';
       takeover.style.transition = '';
       document.body.style.overflow = '';
-
-      // Restore exact scroll position (no jump)
       window.scrollTo({ top: takeover._savedScroll || 0, behavior: 'instant' });
 
-      // Clear all running timers
+      // Clear timers
       bootTimers.forEach(clearTimeout);
       bootTimers = [];
-      clearInterval(progInterval);
-    }, 450);
+    }, 400);
   }
 
-  if (launchBtn)  launchBtn.addEventListener('click',  (e) => { e.preventDefault(); openTakeover(); });
-  if (tkClose)    tkClose.addEventListener('click',    closeTakeover);
+  if (launchBtn) launchBtn.addEventListener('click', (e) => { e.preventDefault(); openTakeover(); });
+  if (tkClose)   tkClose.addEventListener('click', closeTakeover);
 
-  // Close on Escape key
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && takeover.classList.contains('active')) closeTakeover();
   });
 
-  /* ========== TERMINAL TYPING (inside projects takeover) ========== */
+  /* ========== TERMINAL TYPING ========== */
   const typeTexts = [
     'ls -la ./projects',
     'cat e_rawaana_pass.js',
-    'npm run build',
     'git push origin main',
     './deploy --prod'
   ];
@@ -214,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!typedEl) return;
     if (ci < typeTexts[ti].length) {
       typedEl.textContent += typeTexts[ti][ci++];
-      setTimeout(type, 60);
+      setTimeout(type, isMobile ? 50 : 60);
     } else {
       setTimeout(() => {
         const d = setInterval(() => {
@@ -255,10 +251,10 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       const btn      = contactForm.querySelector('button[type="submit"]');
       const original = btn.innerHTML;
-      btn.innerHTML      = '<i class="fa-solid fa-check"></i> SENT!';
+      btn.innerHTML        = '<i class="fa-solid fa-check"></i> SENT!';
       btn.style.background = '#1a8a1a';
       setTimeout(() => {
-        btn.innerHTML      = original;
+        btn.innerHTML        = original;
         btn.style.background = '';
         contactForm.reset();
       }, 3000);
@@ -266,15 +262,17 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* ========== CARD HOVER GLITCH ========== */
-  document.querySelectorAll('.p-card').forEach(card => {
-    card.addEventListener('mouseenter', () => {
-      const title = card.querySelector('.glitch-title');
-      if (title) {
-        title.style.animation = 'none';
-        void title.offsetWidth;
-        title.style.animation = 'glitch 0.4s steps(2) 1';
-      }
+  if (!isMobile) {
+    document.querySelectorAll('.p-card').forEach(card => {
+      card.addEventListener('mouseenter', () => {
+        const title = card.querySelector('.glitch-title');
+        if (title) {
+          title.style.animation = 'none';
+          void title.offsetWidth;
+          title.style.animation = 'glitch 0.4s steps(2) 1';
+        }
+      });
     });
-  });
+  }
 
 });
