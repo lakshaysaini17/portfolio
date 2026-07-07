@@ -28,7 +28,7 @@
 html { scroll-behavior: smooth; }
 
 body {
-  background-image: url("background.png");
+  background-image: url("background.png"), url("./background.png"), url("Background.png");
   background-repeat: no-repeat;
   background-size: cover;
   background-position: top center;
@@ -199,14 +199,6 @@ nav.scrolled { padding: 16px 70px; }
   padding: 110px 70px 50px;
   position: relative;
   overflow: hidden;
-}
-.hero::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 200px;
-  background: linear-gradient(to bottom, transparent, #030303);
-  pointer-events: none;
 }
 
 .hero-bg-glow {
@@ -1297,6 +1289,8 @@ footer p {
   transition: opacity 0.45s ease, visibility 0.45s ease;
   display: flex;
   flex-direction: column;
+  will-change: opacity;
+  -webkit-overflow-scrolling: touch;
 }
 
 .takeover.active {
@@ -1357,7 +1351,8 @@ footer p {
   flex-direction: column;
   justify-content: center;
   padding: 60px 80px;
-  transition: opacity 0.4s ease;
+  transition: opacity 0.35s ease;
+  will-change: opacity;
 }
 
 .boot-lines {
@@ -1492,6 +1487,7 @@ footer p {
   flex-direction: column;
   opacity: 0;
   transform: translateY(20px);
+  will-change: transform, opacity;
 }
 
 .p-card.in {
