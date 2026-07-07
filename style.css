@@ -379,7 +379,8 @@ nav.scrolled { padding: 16px 70px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .avatar-inner {
-  width: 190px; height: 190px;
+  width: 190px;
+  height: 190px;
   border-radius: 50%;
   background: #0d0d0d;
   border: 1px solid rgba(255,77,0,0.12);
@@ -389,6 +390,7 @@ nav.scrolled { padding: 16px 70px; }
   font-size: 64px;
   font-weight: 800;
   color: var(--orange);
+  overflow: hidden;
 }
 
 .about-img-tag {
